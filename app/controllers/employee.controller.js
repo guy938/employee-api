@@ -1,101 +1,72 @@
-const Employee = require('../models/employee.model');
+const Employee = require('../models/employee.model');  // ตรวจสอบบรรทัดนี้
+const EmployeeController = {
+  
+  getAllEmployees: (req, res) => {
+      Employee.getAllEmployees((err, data) => {
+          if (err) {
+              res.status(500).send({ message: err.message });
+          } else {
+              res.status(200).json(data);
+          }
+      });
+  },
 
+  // ฟังก์ชันสำหรับสร้างพนักงานใหม่
+  createEmployee: (req, res) => {
+      const newEmployee = req.body;
+      Employee.createEmployee(newEmployee, (err, data) => {
+          if (err) {
+              res.status(500).send({ message: err.message });
+          } else {
+              res.status(201).json({ id: data.insertId, ...newEmployee });
+          }
+      });
+  },
 
-exports.create = (req, res) => {
-  if (!req.body.fullname) {
-    res.status(400).send({ message: 'Full name cannot be empty' });
-    return;
+  // ฟังก์ชันดึงข้อมูลพนักงานตาม ID
+  getEmployeeById: (req, res) => {
+      const { id } = req.params;
+      Employee.getEmployeeById(id, (err, data) => {
+          if (err || !data) {
+              res.status(404).send({ message: 'Employee not found' });
+          } else {
+              res.status(200).json(data);
+          }
+      });
+  },
+
+  // ฟังก์ชันอัพเดตข้อมูลพนักงาน
+  updateEmployee: (req, res) => {
+      const { id } = req.params;
+      const updatedEmployee = req.body;
+      Employee.updateEmployee(id, updatedEmployee, (err, data) => {
+          if (err) {
+              res.status(500).send({ message: err.message });
+          } else {
+              // ส่งข้อมูลที่อัพเดตกลับไป
+              res.status(200).json({
+                  message: 'Employee updated successfully',
+                  updatedEmployee: { id, ...updatedEmployee }
+              });
+          }
+      });
+  },
+
+  // ฟังก์ชันลบข้อมูลพนักงาน
+  deleteEmployee: (req, res) => {
+      const { id } = req.params;
+      Employee.deleteEmployee(id, (err, data) => {
+          if (err) {
+              res.status(500).send({ message: err.message });
+          } else {
+              // ส่งข้อมูลที่ถูกลบกลับไป
+              res.status(200).json({
+                  message: 'Employee deleted successfully',
+                  deletedId: id
+              });
+          }
+      });
   }
-
-  const employee = new Employee({
-    fullname: req.body.fullname,
-    age: req.body.age,
-    address: req.body.address,
-    phone: req.body.phone,
-    email: req.body.email,
-    employment_status: req.body.employment_status,
-    salary: req.body.salary,
-  });
-
-  Employee.create(employee, (err, data) => {
-    if (err) {
-      res.status(500).send({ message: err.message || 'Some error occurred while creating the employee.' });
-      return;
-    }
-    res.status(201).send(data);
-  });
 };
 
-
-exports.getAll = (req, res) => {
-  Employee.getAll((err, data) => {
-    if (err) {
-      res.status(500).send({ message: err.message || 'Some error occurred while retrieving employees.' });
-      return;
-    }
-    res.status(200).send(data);
-  });
-};
-
-
-exports.getById = (req, res) => {
-  const id = req.params.id;
-  Employee.getById(id, (err, data) => {
-    if (err) {
-      if (err.kind === 'not_found') {
-        res.status(404).send({ message: `Employee with id ${id} not found.` });
-      } else {
-        res.status(500).send({ message: `Error retrieving employee with id ${id}` });
-      }
-      return;
-    }
-    res.status(200).send(data);
-  });
-};
-
-exports.update = (req, res) => {
-  const id = req.params.id;
-
-  Employee.getById(id, (err, oldData) => {
-    if (err || !oldData) {
-      res.status(404).send({ message: `Employee with id ${id} not found.` });
-      return;
-    }
-
-    Employee.update(id, req.body, (err, updatedData) => {
-      if (err) {
-        res.status(500).send({ message: `Error updating employee with id ${id}` });
-        return;
-      }
-      res.status(200).send({
-        message: `Employee with id ${id} updated successfully.`,
-        beforeUpdate: oldData,
-        afterUpdate: updatedData 
-      });
-    });
-  });
-};
-
-
-exports.delete = (req, res) => {
-  const id = req.params.id;
-
-  Employee.getById(id, (err, employeeData) => {
-    if (err || !employeeData) {
-      res.status(404).send({ message: `Employee with id ${id} not found.` });
-      return;
-    }
-
-    Employee.delete(id, (err, data) => {
-      if (err) {
-        res.status(500).send({ message: `Could not delete employee with id ${id}` });
-        return;
-      }
-
-      res.status(200).send({ 
-        message: `Employee with id ${id} was deleted successfully.`,
-        deletedEmployee: employeeData 
-      });
-    });
-  });
-};
+module.exports = EmployeeController;
